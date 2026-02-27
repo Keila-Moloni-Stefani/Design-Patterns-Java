@@ -146,7 +146,6 @@ A aplicação estará disponível em `http://localhost:8080`.
 ## Desenvolvedor
 
 Desenvolvido por Keila Moloni Stefani
-LinkedIn: [linkedin](https://www.linkedin.com/in/keila-moloni-stefani/)
 
 ---
 
