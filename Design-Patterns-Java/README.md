@@ -1,103 +1,86 @@
-# Explorando Padrões de Projetos na Prática com Java + Spring
+# 🧩 Design Patterns com Spring Framework
 
-Projeto desenvolvido como parte do Lab **"Design Patterns com Java: Dos Clássicos (GoF) ao Spring Framework"** da [Digital Innovation One](https://dio.me).
+> Projeto desenvolvido como parte do Lab **"Design Patterns com Java: Dos Clássicos (GoF) ao Spring Framework"** da [Digital Innovation One](https://dio.me).
 
 ---
 
-## 🧩 Padrões de Projeto Aplicados
+## Sobre o Projeto
 
-| Padrão | Como foi aplicado |
+API REST de gerenciamento de clientes que integra automaticamente com a API pública do **ViaCEP** para busca de endereços a partir do CEP informado. O projeto aplica na prática os principais padrões de projeto (GoF) utilizando os recursos nativos do Spring Framework.
+
+---
+
+## Padrões de Projeto Aplicados
+
+| Padrão | Onde foi aplicado |
 |---|---|
-| **Singleton** | Beans Spring gerenciados pelo container (`@Service`, `@Repository`) |
-| **Strategy** | Interface `ClienteService` com implementação `ClienteServiceImpl` |
-| **Facade** | `ClienteRestController` abstrai H2 + ViaCEP numa API simples |
-| **Observer** *(novo)* | `ClienteEvent` + `ClienteEventListener` via Spring Events |
+| **Singleton** | Beans gerenciados pelo container Spring (`@Service`, `@Repository`) garantem instância única |
+| **Strategy** | Interface `ClienteService` desacopla o contrato da implementação `ClienteServiceImpl` |
+| **Facade** | `ClienteRestController` abstrai toda a complexidade de H2 + ViaCEP em endpoints simples |
+| **Observer** | `ClienteEvent` + `ClienteEventListener` via Spring Events — notificações desacopladas por operação |
 
 ---
 
-## 🚀 Melhorias Implementadas
-
-### 1. 🔍 Validação de Entrada (Bean Validation)
-- `@NotBlank` no nome do cliente
-- `@NotNull` + `@Valid` no endereço
-- `@Pattern` no CEP (apenas 8 dígitos numéricos)
-
-### 2. ⚠️ Tratamento Global de Exceções
-- `GlobalExceptionHandler` com `@RestControllerAdvice`
-- `ClienteNotFoundException` → **404 Not Found**
-- `CepInvalidoException` → **422 Unprocessable Entity**
-- Erros de validação → **400 Bad Request** com detalhes por campo
-- Todos os erros retornam JSON estruturado com `timestamp`, `status` e `erro`
-
-### 3. 👁️ Observer Pattern (Spring Events)
-- `ClienteEvent` publicado nas operações de inserir, atualizar e deletar
-- `ClienteEventListener` reage aos eventos (logging, pronto para e-mail/Kafka)
-- Totalmente desacoplado do `ClienteServiceImpl`
-
-### 4. 📡 Status HTTP Corretos
-- `POST /clientes` → **201 Created** (antes: 200)
-- `DELETE /clientes/{id}` → **204 No Content** (antes: 200)
-- Busca por ID inexistente → **404** com mensagem clara
-
-### 5. 📚 Documentação OpenAPI/Swagger
-- Anotações `@Operation`, `@ApiResponse`, `@Tag` no controller
-- Interface disponível em: `http://localhost:8080/swagger-ui.html`
-
-### 6. 🗄️ H2 Console Habilitado
-- Acesse `http://localhost:8080/h2-console`
-- JDBC URL: `jdbc:h2:mem:clientesdb`
-
-### 7. 📋 Logging Estruturado
-- SLF4J em todas as operações do service
-- Prefixo `[OBSERVER]` nos logs do listener para fácil identificação
-
----
-
-## 🗂️ Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 src/main/java/one/digitalinnovation/gof/
 ├── Application.java
 ├── controller/
-│   └── ClienteRestController.java       ← Facade + Swagger
+│   └── ClienteRestController.java        # Facade + Swagger docs
 ├── event/
-│   ├── ClienteEvent.java                ← Observer (evento)
-│   └── ClienteEventListener.java        ← Observer (listener)
+│   ├── ClienteEvent.java                 # Observer — evento de domínio
+│   └── ClienteEventListener.java         # Observer — listener (logging / extensível)
 ├── exception/
 │   ├── CepInvalidoException.java
 │   ├── ClienteNotFoundException.java
-│   └── GlobalExceptionHandler.java      ← Tratamento global
+│   └── GlobalExceptionHandler.java       # Tratamento centralizado de erros
 ├── model/
-│   ├── Cliente.java                     ← @Valid, @NotBlank
+│   ├── Cliente.java                      # @NotBlank, @Valid
 │   ├── ClienteRepository.java
-│   ├── Endereco.java                    ← @Pattern no CEP
+│   ├── Endereco.java                     # @Pattern no CEP
 │   └── EnderecoRepository.java
 └── service/
-    ├── ClienteService.java              ← Strategy (interface)
-    ├── ViaCepService.java               ← Feign Client
+    ├── ClienteService.java               # Strategy — interface
+    ├── ViaCepService.java                # Feign Client HTTP
     └── impl/
-        └── ClienteServiceImpl.java      ← Singleton + Facade + Observer
+        └── ClienteServiceImpl.java       # Singleton + Facade + Observer publisher
 ```
 
 ---
 
-## ▶️ Como Executar
+## Como Executar
 
+### Pré-requisitos
+- Java 11+
+- Maven (ou use o wrapper incluso)
+
+### Rodando a aplicação
 ```bash
+# Clone o repositório
+git clone https://github.com/Keila-Moloni-Stefani/Design-Patterns-Java.git
+cd seu-repositorio
+
+# Execute com o Maven Wrapper
 ./mvnw spring-boot:run
 ```
 
-### Endpoints disponíveis:
+A aplicação estará disponível em `http://localhost:8080`.
 
-| Método | Endpoint | Descrição |
-|---|---|---|
-| GET | `/clientes` | Lista todos os clientes |
-| GET | `/clientes/{id}` | Busca cliente por ID |
-| POST | `/clientes` | Insere novo cliente (busca CEP automaticamente) |
-| PUT | `/clientes/{id}` | Atualiza cliente existente |
-| DELETE | `/clientes/{id}` | Remove cliente |
+---
 
-### Exemplo de requisição POST:
+## Endpoints da API
+
+| Método | Endpoint | Descrição | Status de sucesso |
+|---|---|---|---|
+| `GET` | `/clientes` | Lista todos os clientes | `200 OK` |
+| `GET` | `/clientes/{id}` | Busca cliente por ID | `200 OK` |
+| `POST` | `/clientes` | Insere novo cliente (busca CEP automaticamente) | `201 Created` |
+| `PUT` | `/clientes/{id}` | Atualiza cliente existente | `200 OK` |
+| `DELETE` | `/clientes/{id}` | Remove cliente | `204 No Content` |
+
+### Exemplo de requisição `POST /clientes`
+
 ```json
 {
   "nome": "João Silva",
@@ -107,13 +90,64 @@ src/main/java/one/digitalinnovation/gof/
 }
 ```
 
+### Resposta de sucesso `201 Created`
+
+```json
+{
+  "id": 1,
+  "nome": "João Silva",
+  "endereco": {
+    "cep": "01310100",
+    "logradouro": "Avenida Paulista",
+    "bairro": "Bela Vista",
+    "localidade": "São Paulo",
+    "uf": "SP",
+    ...
+  }
+}
+```
+
+### Resposta de erro — Cliente não encontrado `404`
+
+```json
+{
+  "timestamp": "2024-01-15T10:30:00",
+  "status": 404,
+  "erro": "Cliente com ID 99 não encontrado."
+}
+```
+
 ---
 
-## 🛠️ Tecnologias
+## Tecnologias Utilizadas
 
-- Java 11
-- Spring Boot 2.5.4
-- Spring Data JPA + H2
-- Spring Validation
-- Spring Cloud OpenFeign
-- SpringDoc OpenAPI (Swagger UI)
+| Tecnologia | Versão | Finalidade |
+|---|---|---|
+| Java | 11 | Linguagem base |
+| Spring Boot | 2.5.4 | Framework principal |
+| Spring Data JPA | — | Persistência com H2 |
+| Spring Validation | — | Validação de entrada (Bean Validation) |
+| Spring Cloud OpenFeign | 2020.0.3 | Client HTTP para ViaCEP |
+| SpringDoc OpenAPI | 1.5.10 | Documentação Swagger automática |
+| H2 Database | — | Banco de dados em memória |
+
+---
+
+## Referências
+
+- [Digital Innovation One](https://dio.me)
+- [Spring Framework Docs](https://spring.io/projects/spring-framework)
+- [ViaCEP API](https://viacep.com.br)
+- [Spring Cloud OpenFeign](https://spring.io/projects/spring-cloud-openfeign)
+- [SpringDoc OpenAPI](https://springdoc.org)
+
+---
+
+## Desenvolvedor
+
+Desenvolvido por Keila Moloni Stefani
+LinkedIn: [linkedin](https://www.linkedin.com/in/keila-moloni-stefani/)
+
+---
+
+⭐ Se este projeto foi útil para você, considere dar uma estrela!
